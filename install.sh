@@ -26,6 +26,7 @@ cfg_name=chopper_tune.cfg
 cfg_path=~/printer_data/config/Chopper-Tuner/
 cfg_incl_path=~/printer_data/config/printer.cfg
 
+mkdir -p "${cfg_path}"
 ln -sf "$repo_path/$cfg_name" $cfg_path
 
 if [ -f "$cfg_incl_path" ]; then
