@@ -30,6 +30,8 @@ function check_download {
         echo "[DOWNLOAD] Downloading Chopper-Tuner repository..."
         if git -C $chopperdirname clone https://github.com/LynxCrew/chopper-resonance-tuner.git $chopperbasename; then
             chmod +x ${REPO_PATH}/install.sh
+            chmod +x ${REPO_PATH}/update.sh
+            chmod +x ${REPO_PATH}/uninstall.sh
             printf "[DOWNLOAD] Download complete!\n\n"
         else
             echo "[ERROR] Download of Chopper-Tuner git repository failed!"
