@@ -1,34 +1,66 @@
 #!/bin/bash
-repo=chopper-resonance-tuner
-repo_path=~/chopper-resonance-tuner/
 
-if [ "$(id -u)" = "0" ]; then
-    echo "Script must run from non-root !!!"
-    exit
-fi
+CONFIG_PATH="${HOME}/printer_data/config"
+REPO_PATH="${HOME}/chopper-resonance-tuner"
 
-result_folder=~/printer_data/config/adxl_results/chopper_magnitude
-if [ ! -d "$result_folder" ]; then # Проверка папки chopper_magnitude & создание
-    mkdir -p "$result_folder"
-    # echo "Make $result_folder direction successfully complete"
-fi
+set -eu
+export LC_ALL=C
 
-g_shell_path=~/klipper/klippy/extras/
-g_shell_name=gcode_shell_command.py
-if [ -f "$g_shell_path/$g_shell_name" ]; then
-     echo "Including $g_shell_name aborted, $g_shell_name already exists in $g_shell_path"
-else
-    sudo cp "$repo_path/$g_shell_name" $g_shell_path
-    # echo "Copying $g_shell_name to $g_shell_path successfully complete"
-fi
 
-cfg_name=chopper_tune.cfg
-cfg_path=~/printer_data/config/Chopper-Tuner/
-cfg_incl_path=~/printer_data/config/printer.cfg
+function preflight_checks {
+    if [ "$EUID" -eq 0 ]; then
+        echo "[PRE-CHECK] This script must not be run as root!"
+        exit -1
+    fi
 
-mkdir -p "${cfg_path}"
-ln -sf "$repo_path/$cfg_name" $cfg_path
+    if [ "$(sudo systemctl list-units --full -all -t service --no-legend | grep -F 'klipper.service')" ]; then
+        printf "[PRE-CHECK] Klipper service found! Continuing...\n\n"
+    else
+        echo "[ERROR] Klipper service not found, please install Klipper first!"
+        exit -1
+    fi
+}
 
-sudo apt update
-sudo apt-get install libatlas-base-dev libopenblas-dev
-sudo pip install -r "$repo_path/"wiki/requirements.txt
+function check_download {
+    local chopperdirname chopperbasename
+    chopperdirname="$(dirname ${REPO_PATH})"
+    chopperbasename="$(basename ${REPO_PATH})"
+
+    if [ ! -d "${REPO_PATH}" ]; then
+        echo "[DOWNLOAD] Downloading Chopper-Tuner repository..."
+        if git -C $chopperdirname clone https://github.com/LynxCrew/chopper-resonance-tuner.git $chopperbasename; then
+            chmod +x ${REPO_PATH}/install.sh
+            printf "[DOWNLOAD] Download complete!\n\n"
+        else
+            echo "[ERROR] Download of Chopper-Tuner git repository failed!"
+            exit -1
+        fi
+    else
+        printf "[DOWNLOAD] Chopper-Tuner repository already found locally. Continuing...\n\n"
+    fi
+}
+
+function link_extension {
+    echo "[INSTALL] Linking extension to Klipper..."
+	
+	mkdir -p "${CONFIG_PATH}/Chopper-Tuner"
+
+	ln -sf "${REPO_PATH}/chopper_tune.cfg" "${CONFIG_PATH}/Chopper-Tuner"
+}
+
+function restart_klipper {
+    echo "[POST-INSTALL] Restarting Klipper..."
+    sudo systemctl restart klipper
+}
+
+
+printf "\n======================================\n"
+echo "- Chopper-Tuner install script -"
+printf "======================================\n\n"
+
+
+# Run steps
+preflight_checks
+check_download
+link_extension
+restart_klipper
