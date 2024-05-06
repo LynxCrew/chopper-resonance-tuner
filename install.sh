@@ -50,6 +50,16 @@ function link_extension {
 	ln -sf "${REPO_PATH}/chopper_tune.cfg" "${CONFIG_PATH}/Chopper-Tuner"
 }
 
+function install_dependencies {
+    sudo apt update
+    sudo apt-get install libatlas-base-dev libopenblas-dev
+    # Reuse system libraries
+    python -m venv .venv
+    source .venv/bin/activate
+
+    pip install -r wiki/requirements.txt
+}
+
 function restart_klipper {
     echo "[POST-INSTALL] Restarting Klipper..."
     sudo systemctl restart klipper
@@ -64,5 +74,6 @@ printf "======================================\n\n"
 # Run steps
 preflight_checks
 check_download
+install_dependencies
 link_extension
 restart_klipper
