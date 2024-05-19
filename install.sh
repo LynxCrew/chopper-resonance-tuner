@@ -54,10 +54,10 @@ function install_dependencies {
     sudo apt update
     sudo apt-get install libatlas-base-dev libopenblas-dev
     # Reuse system libraries
-    python -m venv .venv
-    source .venv/bin/activate
+    python -m venv --system-site-packages $REPO_PATH/.venv
+    source $REPO_PATH/.venv/bin/activate
 
-    pip install -r wiki/requirements.txt
+    pip install -r $REPO_PATH/wiki/requirements.txt
 }
 
 function restart_klipper {
